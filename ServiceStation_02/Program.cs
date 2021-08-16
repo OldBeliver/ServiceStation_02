@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace ServiceStation_02
 {
@@ -6,6 +7,44 @@ namespace ServiceStation_02
     {
         public static void Main(string[] args)
         {
+        }
+    }
+
+    class ServiceCenter
+    {
+        
+    }
+
+    class Store
+    {
+        
+    }
+
+    class CarCreator
+    {
+        
+    }
+
+    class Car
+    {
+        private List<Detail> _details;
+
+        public Car()
+        {
+            _details = new List<Detail>();
+        }
+
+        public void ShowInfo()
+        {
+            foreach (var detail in _details)
+            {
+                detail.ShowInfo();
+            }
+        }
+
+        public void DecrementDetailQuantity()
+        {
+            
         }
     }
 
@@ -20,6 +59,4 @@ namespace ServiceStation_02
             Console.WriteLine($"{Name} состояние {Condition}, {Price} рублей");
         }
     }
-    
-    
 }
