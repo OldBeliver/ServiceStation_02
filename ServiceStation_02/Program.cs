@@ -17,6 +17,7 @@ namespace ServiceStation_02
                 cars.Add(creator.CreateNewCar());
             }
 
+            Console.WriteLine($"№№  название\t\tсостояние");
             for (int i = 0; i < cars.Count; i++)
             {
                 cars[i].ShowInfo();
@@ -71,7 +72,7 @@ namespace ServiceStation_02
             
             _details.Add(new Detail("амортизатор", condition, 685));
             _details.Add(new Detail("плановое ТО", condition, 5000));
-            _details.Add(new Detail("ремень ГРМ", condition, 255));
+            _details.Add(new Detail("ремень ГРМ ", condition, 255));
             _details.Add(new Detail("свеча зажигания", condition, 123));
             _details.Add(new Detail("топливный насос", condition, 770));
             _details.Add(new Detail("тормозной диск", condition, 765));
@@ -108,6 +109,16 @@ namespace ServiceStation_02
         }
     }
 
+    class Store
+    {
+        private List<Detail> _store;
+
+        public Store()
+        {
+            _store = new List<Detail>();
+        }
+    }
+
     class Detail
     {
         public string Name { get; private set; } 
@@ -124,7 +135,7 @@ namespace ServiceStation_02
         public void ShowInfo()
         {
             //Console.WriteLine($"{Name} состояние {Condition}, {Price} рублей");
-            Console.WriteLine($"{Name} состояние {Condition}");
+            Console.WriteLine($"{Name} \t{Condition}");
         }
 
         public void CreateNewCondition(int value)
