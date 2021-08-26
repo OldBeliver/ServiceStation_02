@@ -35,6 +35,7 @@ namespace ServiceStation_02
     {
         private List<Detail> _details;
         private Car _car;
+        private Store _store;
         private static Random _random;
         private int _durable;
 
@@ -64,6 +65,13 @@ namespace ServiceStation_02
             }
 
             return _car;
+        }
+
+        public Store CreateNewStore()
+        {
+            _store = new Store();
+
+            return _store;
         }
 
         private void LoadDetails()
@@ -116,6 +124,15 @@ namespace ServiceStation_02
         public Store()
         {
             _store = new List<Detail>();
+        }
+
+        public void ShowInfo()
+        {
+            for (int i = 0; i < _store.Count; i++)
+            {
+                Console.Write($"{i+1:d2}. ");
+                _store[i].ShowInfo();
+            }
         }
     }
 
