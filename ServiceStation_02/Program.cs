@@ -9,11 +9,11 @@ namespace ServiceStation_02
         {
             Creator creator = new Creator();
             List<Car> cars = new List<Car>();
+            List<Store> store = new List<Store>();
+            
 
             for (int i = 0; i < 5; i++)
-            {
-                //Car car = creator.CreateNewCar();
-
+            {   
                 cars.Add(creator.CreateNewCar());
             }
 
@@ -23,12 +23,33 @@ namespace ServiceStation_02
                 cars[i].ShowInfo();
                 Console.WriteLine($"-----------------------");
             }
+
+            store.Add(creator.CreateNewStore());
+
+            Console.WriteLine($"-------------------");
+            Console.WriteLine($"склад");
+            Console.WriteLine($"№№  название\t\tсостояние\tстоимость");
+            for (int i = 0; i < store.Count; i++)
+            {
+                store[i].ShowInfo();
+                Console.WriteLine($"-----------------------");
+            }
         }
     }
 
     class ServiceCenter
     {
-        
+        List<int> _detailQuantity;
+
+        public ServiceCenter()
+        {   
+            LoadZeroDetailQuantity();
+        }
+
+        private void LoadZeroDetailQuantity()
+        {
+            _detailQuantity = new List<int>() { 0, 0, 0, 0, 0, 0, 0, 0 };
+        }
     }
 
     class Creator
@@ -70,6 +91,14 @@ namespace ServiceStation_02
         public Store CreateNewStore()
         {
             _store = new Store();
+
+            for (int i = 0; i < _details.Count; i++)
+            {
+                string name = _details[i].Name;
+                int price = _details[i].Price;
+
+                _store.AddDetail(name, price);
+            }
 
             return _store;
         }
@@ -119,20 +148,25 @@ namespace ServiceStation_02
 
     class Store
     {
-        private List<Detail> _store;
+        private List<Detail> _detail;
 
         public Store()
         {
-            _store = new List<Detail>();
+            _detail = new List<Detail>();
         }
 
         public void ShowInfo()
         {
-            for (int i = 0; i < _store.Count; i++)
+            for (int i = 0; i < _detail.Count; i++)
             {
                 Console.Write($"{i+1:d2}. ");
-                _store[i].ShowInfo();
+                _detail[i].ShowInfo();
             }
+        }
+
+        public void AddDetail(string name, int price)
+        {
+            _detail.Add(new Detail(name, 100, price));
         }
     }
 
@@ -151,8 +185,8 @@ namespace ServiceStation_02
 
         public void ShowInfo()
         {
-            //Console.WriteLine($"{Name} состояние {Condition}, {Price} рублей");
-            Console.WriteLine($"{Name} \t{Condition}");
+            Console.WriteLine($"{Name} \t{Condition} \t\t{Price}");
+            //Console.WriteLine($"{Name} \t{Condition}");
         }
 
         public void CreateNewCondition(int value)
