@@ -21,7 +21,7 @@ namespace ServiceStation_02
             Console.WriteLine($"№№  название\t\tсостояние");
             for (int i = 0; i < cars.Count; i++)
             {
-                cars[i].ShowInfo();
+                cars[i].ShowInfo(10);
                 Console.WriteLine($"-----------------------");
             }
 
@@ -49,8 +49,11 @@ namespace ServiceStation_02
                 store.ShowInfo();
             }
             */
+
+
             ServiceCenter serviceCenter = new ServiceCenter();
             serviceCenter.Work();
+
         }
     }
 
@@ -66,19 +69,20 @@ namespace ServiceStation_02
 
         public ServiceCenter()
         {
-            _creator = new Creator();
-            _cars = new Queue<Car>();
-            _store = new Store();
-
             _carNumber = 5;
             _minCondition = 20;
             _money = 0;
 
+            _creator = new Creator();
+            _cars = new Queue<Car>();
+            
             AddCar(_carNumber);
         }
 
         public void Work()
         {
+            bool isOpen = true;
+
             PrintTitle();
             PrintTicker();
 
@@ -89,19 +93,51 @@ namespace ServiceStation_02
             Console.Write($"\nНажмите ENTER для наполнения склада ...");
             Console.ReadKey();
 
-            _store.AddQuantity();
+            while (isOpen)
+            {
+                Console.Clear();
+                ShowStore();
 
+                Console.Write($"\nexit - выход или\nВведите номер детали: ");
+                string userInput = Console.ReadLine();
+
+                if (userInput == "exit")
+                {
+                    isOpen = false;
+                }
+
+                if(userInput == "test")
+                {   
+                    _store.AddQuantity(userInput);
+                }
+
+                bool result = int.TryParse(userInput, out int number);
+                int upperLimit = _store.GetSlotQuantity();
+
+                if (result && number > 0 && number <= upperLimit)
+                {
+                    int index = number - 1;
+
+                    _store.AddQuantity(index);
+                }
+
+            }
             while (_cars.Count > 0)
             {
+                Console.Clear();
                 PrintTitle();
                 PrintTicker();
 
+                _store.ShowInfo();
+
                 Car car = _cars.Dequeue();
 
+                Console.WriteLine();
                 car.ShowInfo(_minCondition);
 
+                RepareCar(car);
+
                 Console.ReadKey();
-                Console.Clear();
             }
         }
 
@@ -153,6 +189,11 @@ namespace ServiceStation_02
             string ending = GetWordCarEnding(_cars.Count);
             Console.WriteLine($"\nВ очереди не ремонт {_cars.Count} машин{ending}\n");
         }
+
+        private void RepareCar(Car car)
+        {
+            Console.WriteLine($"тут будет код починки машины");
+        }
     }
 
     class Creator
@@ -163,7 +204,7 @@ namespace ServiceStation_02
         private List<Slot> _slots;
         private static Random _random;
         private int _durable;
-
+        private int _storeMaxCapacity;
         static Creator()
         {
             _random = new Random();
@@ -174,6 +215,7 @@ namespace ServiceStation_02
             _details = new List<Detail>();
             _slots = new List<Slot>();
             _durable = 50;
+            _storeMaxCapacity = 40;
 
             LoadDetails();
         }
@@ -195,7 +237,7 @@ namespace ServiceStation_02
 
         public Store CreateNewStore()
         {
-            _store = new Store();
+            _store = new Store(_storeMaxCapacity);
 
             for (int i = 0; i < _details.Count; i++)
             {
@@ -254,10 +296,14 @@ namespace ServiceStation_02
     class Store
     {
         private List<Slot> _slots;
+        int _currentCapacity;
 
-        public Store()
+        public int MaxCapacity { get; private set; }
+
+        public Store(int maxCapacity)
         {
             _slots = new List<Slot>();
+            MaxCapacity = maxCapacity;
         }
 
         public void ShowInfo()
@@ -267,6 +313,19 @@ namespace ServiceStation_02
                 Console.Write($"{i + 1:d2}. ");
                 _slots[i].ShowInfo();
             }
+
+            _currentCapacity = CalculateCurrentCapacity();
+
+            ConsoleColor color;
+            color = Console.ForegroundColor;
+
+            if (_currentCapacity == MaxCapacity)
+            {
+                Console.ForegroundColor = ConsoleColor.Green;
+
+            }
+            Console.WriteLine($"\nВместимость склада {_currentCapacity}/{MaxCapacity}");
+            Console.ForegroundColor = color;
         }
 
         public void AddSlot(Detail detail, int quantity)
@@ -279,41 +338,83 @@ namespace ServiceStation_02
             Console.Write($"Вы выбрали деталь ");
             _slots[index].ShowInfo();
 
-            Console.Write($"количество: ");
-            int number = Convert.ToInt32(Console.ReadLine());
-            _slots[index].AddQuantity(number);
+            Console.Write($"добавить количество: ");
+            int.TryParse(Console.ReadLine(), out int number);
+
+            _currentCapacity = CalculateCurrentCapacity();
+            if (_currentCapacity + number <= MaxCapacity)
+            {
+                _slots[index].AddQuantity(number);
+            }
+            else
+            {
+                Console.WriteLine($"Превышен лимит склада ...");
+                Console.ReadKey();
+            }
+        }
+
+        public void AddQuantity(string cheat)
+        {
+            for (int i = 0; i < _slots.Count; i++)
+            {
+                _slots[i].AddQuantity(10);
+            }
         }
 
         public int GetSlotQuantity()
         {
             return _slots.Count;
         }
+
+        public void IncreaseMaxCapacity(int number)
+        {
+            if (number > 0)
+            {
+                MaxCapacity += number;
+
+                Console.WriteLine($"Вместимость склада увеличена до {MaxCapacity}");
+            }
+        }
+
+        private int CalculateCurrentCapacity()
+        {
+            int amount = 0;
+
+            for (int i = 0; i < _slots.Count; i++)
+            {
+                amount += _slots[i].Quantity;
+            }
+
+            return amount;
+        }
     }
 
     class Slot
     {
         private Detail _detail;
-        private int _quantity;
+
+        public int Quantity { get; private set; }
 
         public Slot(Detail detail, int quantity)
         {
             _detail = detail;
-            _quantity = quantity;
+
+            Quantity = quantity;
         }
 
         public void ShowInfo()
         {
             //Console.WriteLine($"{_detail.Name} \t\t{_quantity} \t{_detail.Price}");
-            Console.WriteLine("{0,-1} \t{1,5:d2} \t{2,17:n2}", _detail.Name, _quantity, _detail.Price);
+            Console.WriteLine("{0,-1} \t{1,5:d2} \t{2,17:n2}", _detail.Name, Quantity, _detail.Price);
         }
 
         public void AddQuantity(int number)
         {
-            _quantity += number;
+            Quantity += number;
 
-            if (_quantity < 0)
+            if (Quantity < 0)
             {
-                _quantity = 0;
+                Quantity = 0;
             }
         }
     }
