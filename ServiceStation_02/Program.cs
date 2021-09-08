@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ServiceStation_02
 {
@@ -7,53 +8,8 @@ namespace ServiceStation_02
     {
         public static void Main(string[] args)
         {
-            /*
-            Creator creator = new Creator();
-            List<Car> cars = new List<Car>();
-            Store store = new Store();
-
-
-            for (int i = 0; i < 5; i++)
-            {
-                cars.Add(creator.CreateNewCar());
-            }
-
-            Console.WriteLine($"№№  название\t\tсостояние");
-            for (int i = 0; i < cars.Count; i++)
-            {
-                cars[i].ShowInfo(10);
-                Console.WriteLine($"-----------------------");
-            }
-
-            store = creator.CreateNewStore();
-
-            Console.WriteLine($"-------------------");
-            Console.WriteLine($"склад");
-            Console.WriteLine($"№№  название\t\tколичество\tстоимость");
-            Console.WriteLine($"--------------------------------------------------");
-            
-            store.ShowInfo();
-
-            Console.WriteLine($"нажите любую для наполнения склада");
-            Console.ReadKey();
-            
-            int count = store.GetSlotQuantity();
-
-            for (int i = 0; i < count; i++)
-            {
-                Console.WriteLine($"введите номер детали: ");
-                int userInput = Convert.ToInt32(Console.ReadLine());
-                store.AddQuantity(userInput - 1);
-
-                Console.Clear();
-                store.ShowInfo();
-            }
-            */
-
-
             ServiceCenter serviceCenter = new ServiceCenter();
             serviceCenter.Work();
-
         }
     }
 
@@ -62,29 +18,34 @@ namespace ServiceStation_02
         private Creator _creator;
         private Queue<Car> _cars;
         private Store _store;
+        private List<PerformedWork> _performedWorks;
 
         private int _carNumber;
         int _minCondition;
         int _money;
+        private int _penalty;
+        string _ending;
 
         public ServiceCenter()
         {
             _carNumber = 5;
             _minCondition = 20;
             _money = 0;
+            _penalty = 200;
 
             _creator = new Creator();
             _cars = new Queue<Car>();
-            
-            AddCar(_carNumber);
+            _performedWorks = new List<PerformedWork>();
         }
 
         public void Work()
         {
             bool isOpen = true;
 
-            PrintTitle();
-            PrintTicker();
+            AddCar(_carNumber);
+
+            ShowTitle();
+            ShowTicker();
 
             _store = _creator.CreateNewStore();
 
@@ -106,9 +67,9 @@ namespace ServiceStation_02
                     isOpen = false;
                 }
 
-                if(userInput == "test")
-                {   
-                    _store.AddQuantity(userInput);
+                if (userInput == "test")
+                {
+                    _store.AddQuantity();
                 }
 
                 bool result = int.TryParse(userInput, out int number);
@@ -120,25 +81,23 @@ namespace ServiceStation_02
 
                     _store.AddQuantity(index);
                 }
-
             }
+
             while (_cars.Count > 0)
             {
                 Console.Clear();
-                PrintTitle();
-                PrintTicker();
-
-                _store.ShowInfo();
-
+                ShowTitle();
+                ShowTicker();
+                ShowStore();
+                
                 Car car = _cars.Dequeue();
-
-                Console.WriteLine();
                 car.ShowInfo(_minCondition);
-
-                RepareCar(car);
-
-                Console.ReadKey();
+                RepaireCar(car);
             }
+
+            _ending = GetWordRubleEnding(_money);
+            Console.Write($"рабочий день окончен\nприбыль за сегодня {_money:n2} рубл{_ending}\nнажмите любую для завершения ...");
+            Console.ReadKey();
         }
 
         private void AddCar(int number)
@@ -151,6 +110,7 @@ namespace ServiceStation_02
 
         private string GetWordCarEnding(int amount)
         {
+            amount = amount % 10;
             string ending = "";
 
             switch (amount)
@@ -168,6 +128,26 @@ namespace ServiceStation_02
             return ending;
         }
 
+        private string GetWordRubleEnding(int amount)
+        {
+            amount = amount % 10;
+            string ending = "ей";
+
+            switch (amount)
+            {
+                case 1:
+                    ending = "ь";
+                    break;
+                case 2:
+                case 3:
+                case 4:
+                    ending = "я";
+                    break;
+            }
+
+            return ending;
+        }
+
         private void ShowStore()
         {
             Console.WriteLine($"--------------------");
@@ -179,20 +159,106 @@ namespace ServiceStation_02
             _store.ShowInfo();
         }
 
-        private void PrintTitle()
+        private void ShowTitle()
         {
             Console.WriteLine("СТО \"Будь проклят то день, когда я сел за баранку этого пылесоса\"");
+            _ending = GetWordRubleEnding(_money);
+            Console.WriteLine($"баланс {_money:n2} рубл{_ending}");
         }
 
-        private void PrintTicker()
+        private void ShowTicker()
         {
             string ending = GetWordCarEnding(_cars.Count);
             Console.WriteLine($"\nВ очереди не ремонт {_cars.Count} машин{ending}\n");
         }
 
-        private void RepareCar(Car car)
+        private void RepaireCar(Car car)
         {
-            Console.WriteLine($"тут будет код починки машины");
+            bool doRepaire = true;
+            int detailIndex = 0;
+            int currentPay;
+            _performedWorks.Clear();
+
+            while (doRepaire)
+            {
+                Console.Clear();
+                ShowTitle();
+                ShowTicker();
+                ShowStore();
+                Console.WriteLine();
+                car.ShowInfo(_minCondition);
+
+                Console.Write($"\n1-8 - номер детали со склада для замены\nnext - закончить ремонт\nВведите команду: ");
+                string userInput = Console.ReadLine();
+
+                if (userInput == "next")
+                {
+                    _money -= CalculatePenalty(car);
+                    Console.WriteLine($"Начисляем денежку за ремонт");
+                    _money += CalculateCosts();
+                    doRepaire = false;
+                }
+                else
+                {
+                    bool result = int.TryParse(userInput, out int number);
+
+                    if (result)
+                    {
+                        int upperLimit = _store.GetCount();
+
+                        if (number > 0 && number <= upperLimit)
+                        {
+                            detailIndex = number - 1;
+                        }
+                        else
+                        {
+                            result = false;
+                        }
+                    }
+
+                    if (result && (!_store.AvailableQuantity(detailIndex) || !car.AvaliableCondition(detailIndex, _minCondition)))
+                    {
+                        Console.WriteLine($"штраф за попытку заменить целую деталь");
+                        currentPay = _store.GetPrice(detailIndex) * (-1);
+                        DateTime timeNow = DateTime.Now;
+                        _performedWorks.Add(new PerformedWork((currentPay), _store.GetName(detailIndex), timeNow));
+                    }
+
+                    if (result && _store.AvailableQuantity(detailIndex) && car.AvaliableCondition(detailIndex, _minCondition))
+                    {
+                        _store.DecreaseQuantity(detailIndex);
+                        int newCondition = _store.GetNewDetailCondition(detailIndex);
+                        car.ReplaceDetail(detailIndex, newCondition);
+                        currentPay = _store.GetPrice(detailIndex) * 3 / 2;
+                        DateTime timeNow = DateTime.Now;
+                        _performedWorks.Add(new PerformedWork((currentPay), _store.GetName(detailIndex), timeNow));
+                    }
+                    
+                    Console.WriteLine($"выполненные работы");
+                    for (int i = 0; i < _performedWorks.Count; i++)
+                    {
+                        _performedWorks[i].ShowInfo();
+                    }
+                }
+
+                Console.Write($"любую для продолжения ... ");
+                Console.ReadKey();
+                Console.Clear();
+            }
+        }
+
+        private int CalculatePenalty(Car car)
+        {
+            int penalty = car.failRepair(_minCondition) * _penalty;
+            _ending = GetWordRubleEnding(_money);
+            Console.WriteLine($"Штраф за отсутствие детали на складе - {penalty} рубл{_ending}");
+            Console.ReadKey();
+            return penalty;
+        }
+
+        private int CalculateCosts()
+        {
+            return _performedWorks.Sum(work => work.Price);
         }
     }
 
@@ -276,20 +342,38 @@ namespace ServiceStation_02
         }
 
         public void ShowInfo(int _minCondition)
-        {
-            int i = 1;
-
-            foreach (var detail in _details)
+        {   
+            Console.WriteLine($"Чек-лист поломок машины");
+            Console.WriteLine($"---------------------------------");
+            Console.WriteLine($" №  деталь\t\tсостояние");
+            Console.WriteLine($"---------------------------------");
+            var filteredByCondition = _details.OrderBy(detail => detail.Condition).ToList();
+            
+            for (int i = 0; i < filteredByCondition.Count; i++)
             {
-                Console.Write($"{i:d2}. ");
-                detail.ShowInfo(_minCondition);
-                i++;
+                Console.Write($"{i+1:d2}. ");
+                filteredByCondition[i].ShowInfo(_minCondition);
             }
         }
 
         public void AddDetail(string name, int condition)
         {
             _details.Add(new Detail(name, condition, usedDetailPrice));
+        }
+        public int failRepair(int minCondition)
+        {
+            var failRepair = _details.Where(detail => detail.Condition <= minCondition);
+            return failRepair.Count();
+        }
+
+        public bool AvaliableCondition(int index, int _minCondition)
+        {
+            return _details[index].Condition <= _minCondition;
+        }
+
+        public void ReplaceDetail(int index, int newCondition)
+        {
+            _details[index].CreateNewCondition(newCondition);
         }
     }
 
@@ -353,11 +437,12 @@ namespace ServiceStation_02
             }
         }
 
-        public void AddQuantity(string cheat)
+        public void AddQuantity()
         {
+            int cheatDetail = 10;
             for (int i = 0; i < _slots.Count; i++)
             {
-                _slots[i].AddQuantity(10);
+                _slots[i].AddQuantity(cheatDetail);
             }
         }
 
@@ -378,14 +463,46 @@ namespace ServiceStation_02
 
         private int CalculateCurrentCapacity()
         {
-            int amount = 0;
-
-            for (int i = 0; i < _slots.Count; i++)
-            {
-                amount += _slots[i].Quantity;
-            }
-
+            int amount = _slots.Sum(detail => detail.Quantity);
             return amount;
+        }
+
+        public int GetCount()
+        {
+            return _slots.Count;
+        }
+
+        public bool AvailableQuantity(int index)
+        {
+            return _slots[index].Quantity > 0;
+        }
+
+        public int GetPrice(int index)
+        {
+            return _slots[index].GetPrice();
+        }
+
+        public string GetName(int index)
+        {
+            return _slots[index].GetName();
+        }
+
+        public void DecreaseQuantity(int index)
+        {
+            if (_slots[index].Quantity > 0)
+            {
+                _slots[index].DeleteDetail();
+            }
+        }
+
+        public int GetNewDetailCondition(int index)
+        {
+            return _slots[index].GetCondition();
+        }
+
+        public void ReplaceDetail(int index, int newCondition)
+        {
+            _slots[index].SetNewCondition(newCondition);
         }
     }
 
@@ -404,7 +521,6 @@ namespace ServiceStation_02
 
         public void ShowInfo()
         {
-            //Console.WriteLine($"{_detail.Name} \t\t{_quantity} \t{_detail.Price}");
             Console.WriteLine("{0,-1} \t{1,5:d2} \t{2,17:n2}", _detail.Name, Quantity, _detail.Price);
         }
 
@@ -416,6 +532,30 @@ namespace ServiceStation_02
             {
                 Quantity = 0;
             }
+        }
+        public int GetPrice()
+        {
+            return _detail.Price;
+        }
+
+        public string GetName()
+        {
+            return _detail.Name;
+        }
+
+        public int GetCondition()
+        {
+            return _detail.Condition;
+        }
+
+        public void DeleteDetail()
+        {
+            Quantity--;
+        }
+
+        public void SetNewCondition(int value)
+        {  
+            _detail.CreateNewCondition(value);
         }
     }
 
@@ -441,7 +581,7 @@ namespace ServiceStation_02
             {
                 Console.ForegroundColor = ConsoleColor.Red;
             }
-            //Console.WriteLine($"{Name} \t{Condition:d2} \t\t{Price}");
+
             Console.WriteLine($"{Name} \t{Condition:d2}");
             Console.ForegroundColor = color;
         }
@@ -449,6 +589,25 @@ namespace ServiceStation_02
         public void CreateNewCondition(int value)
         {
             Condition = value;
+        }
+    }
+
+    class PerformedWork
+    {
+        public int Price { get; private set; }
+        public string Detail { get; private set; }
+        public DateTime Time { get; private set; }
+
+        public PerformedWork(int price, string detail, DateTime time)
+        {
+            Price = price;
+            Detail = detail;
+            Time = time;
+        }
+
+        public void ShowInfo()
+        {
+            Console.WriteLine($"замена {Detail}, {Price} рублей, время {Time}");
         }
     }
 }
