@@ -19,12 +19,12 @@ namespace ServiceStation_02
         private Queue<Car> _cars;
         private Store _store;
         private List<PerformedWork> _performedWorks;
+        private Ending _ending;
 
         private int _carNumber;
-        int _minCondition;
-        int _money;
+        private int _minCondition;
+        private int _money;
         private int _penalty;
-        string _ending;
 
         public ServiceCenter()
         {
@@ -36,6 +36,7 @@ namespace ServiceStation_02
             _creator = new Creator();
             _cars = new Queue<Car>();
             _performedWorks = new List<PerformedWork>();
+            _ending = new Ending();
         }
 
         public void Work()
@@ -94,9 +95,8 @@ namespace ServiceStation_02
                 car.ShowInfo(_minCondition);
                 RepaireCar(car);
             }
-
-            _ending = GetWordRubleEnding(_money);
-            Console.Write($"рабочий день окончен\nприбыль за сегодня {_money:n2} рубл{_ending}\nнажмите любую для завершения ...");
+            
+            Console.Write($"рабочий день окончен\nприбыль за сегодня {_money:n2} рубл{_ending.GetRubleEnding(_money)}\nнажмите любую для завершения ...");
             Console.ReadKey();
         }
 
@@ -106,46 +106,6 @@ namespace ServiceStation_02
             {
                 _cars.Enqueue(_creator.CreateNewCar());
             }
-        }
-
-        private string GetWordCarEnding(int amount)
-        {
-            amount = amount % 10;
-            string ending = "";
-
-            switch (amount)
-            {
-                case 1:
-                    ending = "a";
-                    break;
-                case 2:
-                case 3:
-                case 4:
-                    ending = "ы";
-                    break;
-            }
-
-            return ending;
-        }
-
-        private string GetWordRubleEnding(int amount)
-        {
-            amount = amount % 10;
-            string ending = "ей";
-
-            switch (amount)
-            {
-                case 1:
-                    ending = "ь";
-                    break;
-                case 2:
-                case 3:
-                case 4:
-                    ending = "я";
-                    break;
-            }
-
-            return ending;
         }
 
         private void ShowStore()
@@ -162,14 +122,12 @@ namespace ServiceStation_02
         private void ShowTitle()
         {
             Console.WriteLine("СТО \"Будь проклят то день, когда я сел за баранку этого пылесоса\"");
-            _ending = GetWordRubleEnding(_money);
-            Console.WriteLine($"баланс {_money:n2} рубл{_ending}");
+            Console.WriteLine($"баланс {_money:n2} рубл{_ending.GetRubleEnding(_money)}");
         }
 
         private void ShowTicker()
-        {
-            string ending = GetWordCarEnding(_cars.Count);
-            Console.WriteLine($"\nВ очереди не ремонт {_cars.Count} машин{ending}\n");
+        {   
+            Console.WriteLine($"\nВ очереди не ремонт {_cars.Count} машин{_ending.GetCarEnding(_money)}\n");
         }
 
         private void RepaireCar(Car car)
@@ -250,8 +208,7 @@ namespace ServiceStation_02
         private int CalculatePenalty(Car car)
         {
             int penalty = car.failRepair(_minCondition) * _penalty;
-            _ending = GetWordRubleEnding(_money);
-            Console.WriteLine($"Штраф за отсутствие детали на складе - {penalty} рубл{_ending}");
+            Console.WriteLine($"Штраф за отсутствие детали на складе - {penalty} рубл{_ending.GetRubleEnding(_money)}");
             Console.ReadKey();
             return penalty;
         }
@@ -373,14 +330,14 @@ namespace ServiceStation_02
 
         public void ReplaceDetail(int index, int newCondition)
         {
-            _details[index].CreateNewCondition(newCondition);
+            _details[index].SetNewCondition(newCondition);
         }
     }
 
     class Store
     {
         private List<Slot> _slots;
-        int _currentCapacity;
+        private int _currentCapacity;
 
         public int MaxCapacity { get; private set; }
 
@@ -555,7 +512,7 @@ namespace ServiceStation_02
 
         public void SetNewCondition(int value)
         {  
-            _detail.CreateNewCondition(value);
+            _detail.SetNewCondition(value);
         }
     }
 
@@ -586,7 +543,7 @@ namespace ServiceStation_02
             Console.ForegroundColor = color;
         }
 
-        public void CreateNewCondition(int value)
+        public void SetNewCondition(int value)
         {
             Condition = value;
         }
@@ -594,6 +551,8 @@ namespace ServiceStation_02
 
     class PerformedWork
     {
+        private Ending _ending;
+
         public int Price { get; private set; }
         public string Detail { get; private set; }
         public DateTime Time { get; private set; }
@@ -603,11 +562,60 @@ namespace ServiceStation_02
             Price = price;
             Detail = detail;
             Time = time;
+            _ending = new Ending();
         }
 
         public void ShowInfo()
         {
-            Console.WriteLine($"замена {Detail}, {Price} рублей, время {Time}");
+            Console.WriteLine($"замена {Detail}, {Price} рубл{_ending.GetRubleEnding(Price)}, время {Time}");
+        }
+    }
+
+    class Ending
+    {
+       public string GetCarEnding(int number)
+        {
+            int amount = GetLastNumeral(number);
+            string ending = "";
+
+            switch (amount)
+            {
+                case 1:
+                    ending = "a";
+                    break;
+                case 2:
+                case 3:
+                case 4:
+                    ending = "ы";
+                    break;
+            }
+
+            return ending;
+        }
+
+        public string GetRubleEnding(int number)
+        {
+            int amount = GetLastNumeral(number);
+            string ending = "ей";
+
+            switch (amount)
+            {
+                case 1:
+                    ending = "ь";
+                    break;
+                case 2:
+                case 3:
+                case 4:
+                    ending = "я";
+                    break;
+            }
+
+            return ending;
+        }
+
+        private int GetLastNumeral(int number)
+        {
+            return number % 10;
         }
     }
 }
