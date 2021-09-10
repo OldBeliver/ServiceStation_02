@@ -185,8 +185,7 @@ namespace ServiceStation_02
                     if (result && _store.AvailableQuantity(detailIndex) && car.AvaliableCondition(detailIndex, _minCondition))
                     {
                         _store.DecreaseQuantity(detailIndex);
-                        int newCondition = _store.GetNewDetailCondition(detailIndex);
-                        car.ReplaceDetail(detailIndex, newCondition);
+                        car.DoConditionDetailAsNew(detailIndex);
                         currentPay = _store.GetPrice(detailIndex) * 3 / 2;
                         DateTime timeNow = DateTime.Now;
                         _performedWorks.Add(new PerformedWork((currentPay), _store.GetName(detailIndex), timeNow));
@@ -328,9 +327,9 @@ namespace ServiceStation_02
             return _details[index].Condition <= _minCondition;
         }
 
-        public void ReplaceDetail(int index, int newCondition)
+        public void DoConditionDetailAsNew(int index)
         {
-            _details[index].SetNewCondition(newCondition);
+            _details[index].SetConditionAsNew();
         }
     }
 
@@ -457,9 +456,9 @@ namespace ServiceStation_02
             return _slots[index].GetCondition();
         }
 
-        public void ReplaceDetail(int index, int newCondition)
+        public void ReplaceDetail(int index)
         {
-            _slots[index].SetNewCondition(newCondition);
+            _slots[index].SetConditionAsNew();
         }
     }
 
@@ -510,14 +509,14 @@ namespace ServiceStation_02
             Quantity--;
         }
 
-        public void SetNewCondition(int value)
+        public void SetConditionAsNew()
         {  
-            _detail.SetNewCondition(value);
+            _detail.SetConditionAsNew();
         }
     }
 
     class Detail
-    {
+    {   
         public string Name { get; private set; }
         public int Condition { get; private set; }
         public int Price { get; private set; }
@@ -543,9 +542,9 @@ namespace ServiceStation_02
             Console.ForegroundColor = color;
         }
 
-        public void SetNewCondition(int value)
-        {
-            Condition = value;
+        public void SetConditionAsNew()
+        {   
+            Condition = 100;
         }
     }
 
