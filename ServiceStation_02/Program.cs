@@ -20,7 +20,7 @@ namespace ServiceStation_02
         private Store _store;
         private List<PerformedWork> _performedWorks;
         private Ending _ending;
-
+       
         private int _carNumber;
         private int _minCondition;
         private int _money;
@@ -176,7 +176,7 @@ namespace ServiceStation_02
 
                     if (result && (!_store.AvailableQuantity(detailIndex) || !car.AvaliableCondition(detailIndex, _minCondition)))
                     {
-                        Console.WriteLine($"штраф за попытку заменить целую деталь");
+                        Console.WriteLine($"штраф за попытку заменить годную деталь");
                         currentPay = _store.GetPrice(detailIndex) * (-1);
                         DateTime timeNow = DateTime.Now;
                         _performedWorks.Add(new PerformedWork((currentPay), _store.GetName(detailIndex), timeNow));
@@ -227,6 +227,7 @@ namespace ServiceStation_02
         private static Random _random;
         private int _durable;
         private int _storeMaxCapacity;
+
         static Creator()
         {
             _random = new Random();
@@ -359,7 +360,7 @@ namespace ServiceStation_02
             ConsoleColor color;
             color = Console.ForegroundColor;
 
-            if (_currentCapacity == MaxCapacity)
+            if (_currentCapacity >= MaxCapacity)
             {
                 Console.ForegroundColor = ConsoleColor.Green;
 
@@ -396,6 +397,7 @@ namespace ServiceStation_02
         public void AddQuantity()
         {
             int cheatDetail = 10;
+
             for (int i = 0; i < _slots.Count; i++)
             {
                 _slots[i].AddQuantity(cheatDetail);
@@ -405,16 +407,6 @@ namespace ServiceStation_02
         public int GetSlotQuantity()
         {
             return _slots.Count;
-        }
-
-        public void IncreaseMaxCapacity(int number)
-        {
-            if (number > 0)
-            {
-                MaxCapacity += number;
-
-                Console.WriteLine($"Вместимость склада увеличена до {MaxCapacity}");
-            }
         }
 
         private int CalculateCurrentCapacity()
