@@ -185,8 +185,10 @@ namespace ServiceStation_02
                     if (result && _store.AvailableQuantity(detailIndex) && car.AvaliableCondition(detailIndex, _minCondition))
                     {
                         _store.DecreaseQuantity(detailIndex);
+
                         Detail detail = car.GetDetail(detailIndex);
-                        detail.SetConditionAsNew();
+                       _creator.SetMaxCondition(detail);
+
                         currentPay = _store.GetPrice(detailIndex) * 3 / 2;
                         DateTime timeNow = DateTime.Now;
                         _performedWorks.Add(new PerformedWork((currentPay), _store.GetName(detailIndex), timeNow));
@@ -229,6 +231,8 @@ namespace ServiceStation_02
         private int _durable;
         private int _storeMaxCapacity;
 
+        public int MaxCondition { get; private set; }
+
         static Creator()
         {
             _random = new Random();
@@ -240,8 +244,9 @@ namespace ServiceStation_02
             _slots = new List<Slot>();
             _durable = 50;
             _storeMaxCapacity = 40;
+            MaxCondition = 100;
 
-            LoadDetails();
+            LoadDetails(MaxCondition);
         }
 
         public Car CreateNewCar()
@@ -274,9 +279,14 @@ namespace ServiceStation_02
             return _store;
         }
 
-        private void LoadDetails()
+        public void SetMaxCondition(Detail detail)
+        {   
+            detail.SetConditionAsNew(MaxCondition);
+        }
+
+        private void LoadDetails(int value)
         {
-            int condition = 100;
+            int condition = value;
 
             _details.Add(new Detail("амортизатор", condition, 685));
             _details.Add(new Detail("плановое ТО", condition, 5000));
@@ -520,9 +530,9 @@ namespace ServiceStation_02
             Console.ForegroundColor = color;
         }
 
-        public void SetConditionAsNew()
+        public void SetConditionAsNew(int value)
         {
-            Condition = 100;
+            Condition = value;
         }
     }
 
