@@ -127,7 +127,7 @@ namespace ServiceStation_02
 
         private void ShowTicker()
         {   
-            Console.WriteLine($"\nВ очереди не ремонт {_cars.Count} машин{_ending.GetCarEnding(_money)}\n");
+            Console.WriteLine($"\nВ очереди на ремонт {_cars.Count} машин{_ending.GetCarEnding(_money)}\n");
         }
 
         private void RepaireCar(Car car)
@@ -159,7 +159,7 @@ namespace ServiceStation_02
                 else
                 {
                     bool result = int.TryParse(userInput, out int number);
-
+                    
                     if (result)
                     {
                         int upperLimit = _store.GetCount();
@@ -185,7 +185,8 @@ namespace ServiceStation_02
                     if (result && _store.AvailableQuantity(detailIndex) && car.AvaliableCondition(detailIndex, _minCondition))
                     {
                         _store.DecreaseQuantity(detailIndex);
-                        car.DoConditionDetailAsNew(detailIndex);
+                        Detail detail = car.GetDetail(detailIndex);
+                        detail.SetConditionAsNew();
                         currentPay = _store.GetPrice(detailIndex) * 3 / 2;
                         DateTime timeNow = DateTime.Now;
                         _performedWorks.Add(new PerformedWork((currentPay), _store.GetName(detailIndex), timeNow));
@@ -327,10 +328,10 @@ namespace ServiceStation_02
         {
             return _details[index].Condition <= _minCondition;
         }
-
-        public void DoConditionDetailAsNew(int index)
+        
+        public Detail GetDetail(int index)
         {
-            _details[index].SetConditionAsNew();
+            return _details[index];
         }
     }
 
@@ -363,8 +364,8 @@ namespace ServiceStation_02
             if (_currentCapacity >= MaxCapacity)
             {
                 Console.ForegroundColor = ConsoleColor.Green;
-
             }
+
             Console.WriteLine($"\nВместимость склада {_currentCapacity}/{MaxCapacity}");
             Console.ForegroundColor = color;
         }
@@ -442,16 +443,6 @@ namespace ServiceStation_02
                 _slots[index].DeleteDetail();
             }
         }
-
-        public int GetNewDetailCondition(int index)
-        {
-            return _slots[index].GetCondition();
-        }
-
-        public void ReplaceDetail(int index)
-        {
-            _slots[index].SetConditionAsNew();
-        }
     }
 
     class Slot
@@ -500,11 +491,6 @@ namespace ServiceStation_02
         {
             Quantity--;
         }
-
-        public void SetConditionAsNew()
-        {  
-            _detail.SetConditionAsNew();
-        }
     }
 
     class Detail
@@ -535,7 +521,7 @@ namespace ServiceStation_02
         }
 
         public void SetConditionAsNew()
-        {   
+        {
             Condition = 100;
         }
     }
