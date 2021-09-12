@@ -187,7 +187,7 @@ namespace ServiceStation_02
                         _store.DecreaseQuantity(detailIndex);
 
                         Detail detail = car.GetDetail(detailIndex);
-                       _creator.SetMaxCondition(detail);
+                       _creator.FixDetail(detail);
 
                         currentPay = _store.GetPrice(detailIndex) * 3 / 2;
                         DateTime timeNow = DateTime.Now;
@@ -209,7 +209,7 @@ namespace ServiceStation_02
 
         private int CalculatePenalty(Car car)
         {
-            int penalty = car.failRepair(_minCondition) * _penalty;
+            int penalty = car.FindBrokenDetail(_minCondition) * _penalty;
             Console.WriteLine($"Штраф за отсутствие детали на складе - {penalty} рубл{_ending.GetRubleEnding(_money)}");
             Console.ReadKey();
             return penalty;
@@ -243,7 +243,7 @@ namespace ServiceStation_02
             _details = new List<Detail>();
             _slots = new List<Slot>();
             _durable = 50;
-            _storeMaxCapacity = 40;
+            _storeMaxCapacity = 30;
             MaxCondition = 100;
 
             LoadDetails(MaxCondition);
@@ -279,9 +279,9 @@ namespace ServiceStation_02
             return _store;
         }
 
-        public void SetMaxCondition(Detail detail)
+        public void FixDetail(Detail detail)
         {   
-            detail.SetConditionAsNew(MaxCondition);
+            detail.FixDetail();
         }
 
         private void LoadDetails(int value)
@@ -302,7 +302,7 @@ namespace ServiceStation_02
     class Car
     {
         private List<Detail> _details;
-        private int usedDetailPrice = 0;
+        private int _usedDetailPrice = 0;
 
         public Car()
         {
@@ -326,12 +326,12 @@ namespace ServiceStation_02
 
         public void AddDetail(string name, int condition)
         {
-            _details.Add(new Detail(name, condition, usedDetailPrice));
+            _details.Add(new Detail(name, condition, _usedDetailPrice));
         }
-        public int failRepair(int minCondition)
+        public int FindBrokenDetail(int minCondition)
         {
-            var failRepair = _details.Where(detail => detail.Condition <= minCondition);
-            return failRepair.Count();
+            var brokenDetails = _details.Where(detail => detail.Condition <= minCondition);
+            return brokenDetails.Count();
         }
 
         public bool AvaliableCondition(int index, int _minCondition)
@@ -530,9 +530,9 @@ namespace ServiceStation_02
             Console.ForegroundColor = color;
         }
 
-        public void SetConditionAsNew(int value)
+        public void FixDetail()
         {
-            Condition = value;
+            Condition = 100;
         }
     }
 
