@@ -127,7 +127,7 @@ namespace ServiceStation_02
 
         private void ShowTicker()
         {   
-            Console.WriteLine($"\nВ очереди на ремонт {_cars.Count} машин{_ending.GetCarEnding(_money)}\n");
+            Console.WriteLine($"\nВ очереди на ремонт {_cars.Count} машин{_ending.GetCarEnding(_cars.Count)}\n");
         }
 
         private void RepaireCar(Car car)
@@ -185,10 +185,8 @@ namespace ServiceStation_02
                     if (result && _store.AvailableQuantity(detailIndex) && car.AvaliableCondition(detailIndex, _minCondition))
                     {
                         _store.DecreaseQuantity(detailIndex);
-
-                        Detail detail = car.GetDetail(detailIndex);
-                       _creator.FixDetail(detail);
-
+                        _creator.FixDetail(car, detailIndex);
+                        
                         currentPay = _store.GetPrice(detailIndex) * 3 / 2;
                         DateTime timeNow = DateTime.Now;
                         _performedWorks.Add(new PerformedWork((currentPay), _store.GetName(detailIndex), timeNow));
@@ -226,7 +224,6 @@ namespace ServiceStation_02
         private List<Detail> _details;
         private Car _car;
         private Store _store;
-        private List<Slot> _slots;
         private static Random _random;
         private int _durable;
         private int _storeMaxCapacity;
@@ -241,7 +238,6 @@ namespace ServiceStation_02
         public Creator()
         {
             _details = new List<Detail>();
-            _slots = new List<Slot>();
             _durable = 50;
             _storeMaxCapacity = 30;
             MaxCondition = 100;
@@ -279,9 +275,10 @@ namespace ServiceStation_02
             return _store;
         }
 
-        public void FixDetail(Detail detail)
+        public void FixDetail(Car car, int detailIndex)
         {   
-            detail.FixDetail();
+            string name = car.DeleteDetail(detailIndex);
+            car.AddDetail(name, MaxCondition, detailIndex);
         }
 
         private void LoadDetails(int value)
@@ -324,10 +321,26 @@ namespace ServiceStation_02
             }
         }
 
+
         public void AddDetail(string name, int condition)
         {
             _details.Add(new Detail(name, condition, _usedDetailPrice));
         }
+
+        public void AddDetail(string name, int condition, int detailIndex)
+        {
+            int price = 0;
+            Detail detail = new Detail(name, condition, price);
+            _details.Insert(detailIndex, detail);
+        }
+
+        public string DeleteDetail(int detailIndex)
+        {   
+            string name = _details[detailIndex].Name;
+            _details.RemoveAt(detailIndex);
+            return name;
+        }
+
         public int FindBrokenDetail(int minCondition)
         {
             var brokenDetails = _details.Where(detail => detail.Condition <= minCondition);
@@ -528,11 +541,6 @@ namespace ServiceStation_02
 
             Console.WriteLine($"{Name} \t{Condition:d2}");
             Console.ForegroundColor = color;
-        }
-
-        public void FixDetail()
-        {
-            Condition = 100;
         }
     }
 
